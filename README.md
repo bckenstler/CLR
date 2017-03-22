@@ -5,7 +5,7 @@ clr_optimizers.py is a modified version of Keras' default optimizer module (http
 
 Each optimizer can now implement cyclical learning rate with one of the following three approaches:
 
-"triangular":
+## triangular
 
 This method is a simple triangular cycle.
 
@@ -20,7 +20,7 @@ clr = {
 Where step_size is half the period of the cycle in iterations,
 and max_lr is the peak of the cycle (default lr is the base lr).
 
-"triangular2":
+## triangular2
 
 This method is a triangular cycle that decreases the cycle amplitude by half after each period, while keeping the base lr constant.
 
@@ -35,7 +35,7 @@ clr = {
 Where step_size is half the period of the cycle in iterations,
 and max_lr is the peak of the cycle (default lr is the base lr).
 
-"exp_range":
+## exp_range
 
 This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration, while keeping the base lr constant.
 
@@ -52,6 +52,7 @@ Where step_size is half the period of the cycle in iterations,
 max_lr is the peak of the cycle (default lr is the base lr),
 and gamma is the scaling factor.
 
+## Order of learning rate augmentation
 Note that clr happens prior to any further learning rate adjustments as called for in a given optimizer, with the exception of learning rate decay. If implemented, decay happens prior to clr; this alters the cycle by lowering the minimum lr; the max_lr is kept constant.
 
 clr_optimizer_tests.ipynb contains tests demonstrating desired behavior of optimizers in comparison to toy functions.
