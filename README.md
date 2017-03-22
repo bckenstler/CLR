@@ -10,6 +10,7 @@ Each optimizer can now implement cyclical learning rate with one of the followin
 This method is a simple triangular cycle.
 
 To use triangular clr, simply pass into any optimizer the following:
+
 clr = {
     "mode":"triangular",
     "step_size":step_size,
@@ -24,6 +25,7 @@ and max_lr is the peak of the cycle (default lr is the base lr).
 This method is a triangular cycle that decreases the cycle amplitude by half after each period, while keeping the base lr constant.
 
 To use triangular2 clr, simply pass into any optimizer the following:
+
 clr = {
     "mode":"triangular2",
     "step_size":step_size,
@@ -38,6 +40,7 @@ and max_lr is the peak of the cycle (default lr is the base lr).
 This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration, while keeping the base lr constant.
 
 To use exp_range clr, simply pass into any optimizer the following:
+
 clr = {
     "mode":"exp_range",
     "step_size":step_size,
