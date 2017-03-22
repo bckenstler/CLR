@@ -1,62 +1,3 @@
-"""
-Modified default Keras optimizer module https://github.com/fchollet/keras/blob/master/keras/optimizers.py
-
-Each optimizer can now implement cyclical learning rate with one of the following three approaches:
-
-"triangular":
-
-This method is a simple triangular cycle.
-
-To use triangular clr, simply pass into any optimizer the following:
-
-clr = {
-    "mode":"triangular",
-    "step_size":step_size,
-    "max_lr":max_lr
-    }
-    
-Where step_size is half the period of the cycle in iterations,
-and max_lr is the peak of the cycle (default lr is the base lr).
-
-"triangular2":
-
-This method is a triangular cycle that decreases the cycle amplitude by half after each period,
-while keeping the base lr constant.
-
-To use triangular2 clr, simply pass into any optimizer the following:
-
-clr = {
-    "mode":"triangular2",
-    "step_size":step_size,
-    "max_lr":max_lr
-    }
-    
-Where step_size is half the period of the cycle in iterations,
-and max_lr is the peak of the cycle (default lr is the base lr).
-
-"exp_range":
-
-This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration,
-while keeping the base lr constant.
-
-To use exp_range clr, simply pass into any optimizer the following:
-
-clr = {
-    "mode":"exp_range",
-    "step_size":step_size,
-    "max_lr":max_lr,
-    "gamma": gamma
-    }
-    
-Where step_size is half the period of the cycle in iterations,
-max_lr is the peak of the cycle (default lr is the base lr),
-and gamma is the scaling factor.
-
-Note that clr happens prior to any further learning rate adjustments as called for in a given optimizer,
-with the exception of learning rate decay. If implemented, decay happens prior to clr;
-this alters the cycle by lowering the minimum lr; the max_lr is kept constant.
-"""
-
 from __future__ import absolute_import
 import six
 from six.moves import zip
@@ -183,7 +124,14 @@ class SGD(Optimizer):
         self.initial_decay = decay
         self.nesterov = nesterov
         self.clr = clr
-        self.current_lr = K.variable(0., name='current_lr')
+        if self.clr != None:
+            self.max_lr = K.variable(self.clr['max_lr'], name='max_clr')
+            self.step_size = K.variable(self.clr['step_size'], name='step_size')
+            self.clr_mode = self.clr['mode']
+            if self.clr_mode=='exp_range':
+                self.clr_gamma = K.variable(self.clr['clr_gamma'], name='clr_gamma')
+            self.current_lr = K.variable(0., name='current_lr')
+            self.clr_iterations = K.variable(0., name='clr_iterations')
 
 
     def get_updates(self, params, constraints, loss):
@@ -196,31 +144,25 @@ class SGD(Optimizer):
             self.updates.append(K.update_add(self.iterations, 1))
         
         if self.clr != None:
-            if self.clr['mode']=='triangular':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))
+            if self.clr_mode=='triangular':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))
                 
-            elif self.clr['mode']=='triangular2':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
+            elif self.clr_mode=='triangular2':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
                 
-            elif self.clr['mode']=='exp_range':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))*self.clr['gamma']**(self.iterations)
+            elif self.clr_mode=='exp_range':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))*self.clr_gamma**(self.clr_iterations)
                 
-            if self.initial_decay==0:
-                self.updates.append(K.update_add(self.iterations, 1))
+
+            self.updates.append(K.update_add(self.clr_iterations, 1))
         
-        self.updates.append(K.update(self.current_lr, lr))
+            self.updates.append(K.update(self.current_lr, lr))
         # momentum
         shapes = [K.get_variable_shape(p) for p in params]
         moments = [K.zeros(shape) for shape in shapes]
@@ -243,13 +185,19 @@ class SGD(Optimizer):
         return self.updates
 
     def get_config(self):
-        config = {'lr': float(K.get_value(self.lr)),
-                  'momentum': float(K.get_value(self.momentum)),
-                  'decay': float(K.get_value(self.decay)),
-                  'nesterov': self.nesterov,
-                  'iterations': K.get_value(self.iterations),
-                  'current_lr': float(K.get_value(self.current_lr))
-                 }
+        if self.clr !=None:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'momentum': float(K.get_value(self.momentum)),
+                      'decay': float(K.get_value(self.decay)),
+                      'nesterov': self.nesterov,
+                      'clr_iterations': K.get_value(self.clr_iterations),
+                      'current_lr': float(K.get_value(self.current_lr))
+                     }
+        else:
+             config = {'lr': float(K.get_value(self.lr)),
+                      'momentum': float(K.get_value(self.momentum)),
+                      'decay': float(K.get_value(self.decay)),
+                      'nesterov': self.nesterov}
         base_config = super(SGD, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -284,7 +232,14 @@ class RMSprop(Optimizer):
         self.initial_decay = decay
         self.iterations = K.variable(0., name='iterations')
         self.clr = clr
-        self.current_lr = K.variable(0., name='current_lr')        
+        if self.clr != None:
+            self.max_lr = K.variable(self.clr['max_lr'], name='max_clr')
+            self.step_size = K.variable(self.clr['step_size'], name='step_size')
+            self.clr_mode = self.clr['mode']
+            if self.clr_mode=='exp_range':
+                self.clr_gamma = K.variable(self.clr['clr_gamma'], name='clr_gamma')
+            self.current_lr = K.variable(0., name='current_lr')
+            self.clr_iterations = K.variable(0., name='clr_iterations')       
 
     def get_updates(self, params, constraints, loss):
         grads = self.get_gradients(loss, params)
@@ -299,31 +254,25 @@ class RMSprop(Optimizer):
             self.updates.append(K.update_add(self.iterations, 1))
             
         if self.clr != None:
-            if self.clr['mode']=='triangular':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))
+            if self.clr_mode=='triangular':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))
                 
-            elif self.clr['mode']=='triangular2':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
+            elif self.clr_mode=='triangular2':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
                 
-            elif self.clr['mode']=='exp_range':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))*self.clr['gamma']**(self.iterations)
+            elif self.clr_mode=='exp_range':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))*self.clr_gamma**(self.clr_iterations)
                 
-            if self.initial_decay==0:
-                self.updates.append(K.update_add(self.iterations, 1))
-                
-        self.updates.append(K.update(self.current_lr, lr))
+
+            self.updates.append(K.update_add(self.clr_iterations, 1))
+        
+            self.updates.append(K.update(self.current_lr, lr))
                 
         for p, g, a in zip(params, grads, accumulators):
             # update accumulator
@@ -339,12 +288,18 @@ class RMSprop(Optimizer):
         return self.updates
 
     def get_config(self):
-        config = {'lr': float(K.get_value(self.lr)),
-                  'rho': float(K.get_value(self.rho)),
-                  'decay': float(K.get_value(self.decay)),
-                  'epsilon': self.epsilon,
-                  'iterations': K.get_value(self.iterations),
-                  'current_lr': float(K.get_value(self.current_lr))}
+        if self.clr != None:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'rho': float(K.get_value(self.rho)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon,
+                      'clr_iterations': K.get_value(self.clr_iterations),
+                      'current_lr': float(K.get_value(self.current_lr))}
+        else:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'rho': float(K.get_value(self.rho)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon}            
         base_config = super(RMSprop, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -372,7 +327,14 @@ class Adagrad(Optimizer):
         self.initial_decay = decay
         self.iterations = K.variable(0., name='iterations')
         self.clr = clr
-        self.current_lr = K.variable(0., name='current_lr')
+        if self.clr != None:
+            self.max_lr = K.variable(self.clr['max_lr'], name='max_clr')
+            self.step_size = K.variable(self.clr['step_size'], name='step_size')
+            self.clr_mode = self.clr['mode']
+            if self.clr_mode=='exp_range':
+                self.clr_gamma = K.variable(self.clr['clr_gamma'], name='clr_gamma')
+            self.current_lr = K.variable(0., name='current_lr')
+            self.clr_iterations = K.variable(0., name='clr_iterations')
 
     def get_updates(self, params, constraints, loss):
         grads = self.get_gradients(loss, params)
@@ -387,31 +349,25 @@ class Adagrad(Optimizer):
             self.updates.append(K.update_add(self.iterations, 1))
             
         if self.clr != None:
-            if self.clr['mode']=='triangular':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))
+            if self.clr_mode=='triangular':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))
                 
-            elif self.clr['mode']=='triangular2':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
+            elif self.clr_mode=='triangular2':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
                 
-            elif self.clr['mode']=='exp_range':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))*self.clr['gamma']**(self.iterations)
+            elif self.clr_mode=='exp_range':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))*self.clr_gamma**(self.clr_iterations)
                 
-            if self.initial_decay==0:
-                self.updates.append(K.update_add(self.iterations, 1))
-                
-        self.updates.append(K.update(self.current_lr, lr))
+
+            self.updates.append(K.update_add(self.clr_iterations, 1))
+        
+            self.updates.append(K.update(self.current_lr, lr))
 
         for p, g, a in zip(params, grads, accumulators):
             new_a = a + K.square(g)  # update accumulator
@@ -425,11 +381,16 @@ class Adagrad(Optimizer):
         return self.updates
 
     def get_config(self):
-        config = {'lr': float(K.get_value(self.lr)),
-                  'decay': float(K.get_value(self.decay)),
-                  'epsilon': self.epsilon,
-                  'iterations': K.get_value(self.iterations),
-                  'current_lr': float(K.get_value(self.current_lr))}
+        if self.clr != None:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon,
+                      'clr_iterations': K.get_value(self.clr_iterations),
+                      'current_lr': float(K.get_value(self.current_lr))}
+        else:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon}            
         base_config = super(Adagrad, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -461,7 +422,14 @@ class Adadelta(Optimizer):
         self.initial_decay = decay
         self.iterations = K.variable(0., name='iterations')
         self.clr = clr
-        self.current_lr = K.variable(0., name='current_lr')
+        if self.clr != None:
+            self.max_lr = K.variable(self.clr['max_lr'], name='max_clr')
+            self.step_size = K.variable(self.clr['step_size'], name='step_size')
+            self.clr_mode = self.clr['mode']
+            if self.clr_mode=='exp_range':
+                self.clr_gamma = K.variable(self.clr['clr_gamma'], name='clr_gamma')
+            self.current_lr = K.variable(0., name='current_lr')
+            self.clr_iterations = K.variable(0., name='clr_iterations')
 
     def get_updates(self, params, constraints, loss):
         grads = self.get_gradients(loss, params)
@@ -477,31 +445,25 @@ class Adadelta(Optimizer):
             self.updates.append(K.update_add(self.iterations, 1))
             
         if self.clr != None:
-            if self.clr['mode']=='triangular':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))
+            if self.clr_mode=='triangular':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))
                 
-            elif self.clr['mode']=='triangular2':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
+            elif self.clr_mode=='triangular2':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
                 
-            elif self.clr['mode']=='exp_range':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))*self.clr['gamma']**(self.iterations)
+            elif self.clr_mode=='exp_range':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))*self.clr_gamma**(self.clr_iterations)
                 
-            if self.initial_decay==0:
-                self.updates.append(K.update_add(self.iterations, 1))
-                
-        self.updates.append(K.update(self.current_lr, lr))           
+
+            self.updates.append(K.update_add(self.clr_iterations, 1))
+        
+            self.updates.append(K.update(self.current_lr, lr))      
 
         for p, g, a, d_a in zip(params, grads, accumulators, delta_accumulators):
             # update accumulator
@@ -524,12 +486,18 @@ class Adadelta(Optimizer):
         return self.updates
 
     def get_config(self):
-        config = {'lr': float(K.get_value(self.lr)),
-                  'rho': self.rho,
-                  'decay': float(K.get_value(self.decay)),
-                  'epsilon': self.epsilon,
-                  'iterations': K.get_value(self.iterations),
-                  'current_lr': float(K.get_value(self.current_lr))}
+        if self.clr != None:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'rho': self.rho,
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon,
+                      'clr_iterations': K.get_value(self.clr_iterations),
+                      'current_lr': float(K.get_value(self.current_lr))}
+        else:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'rho': self.rho,
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon}            
         base_config = super(Adadelta, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -561,7 +529,14 @@ class Adam(Optimizer):
         self.decay = K.variable(decay, name='decay')
         self.initial_decay = decay
         self.clr = clr
-        self.current_lr = K.variable(0., name='current_lr')        
+        if self.clr != None:
+            self.max_lr = K.variable(self.clr['max_lr'], name='max_clr')
+            self.step_size = K.variable(self.clr['step_size'], name='step_size')
+            self.clr_mode = self.clr['mode']
+            if self.clr_mode=='exp_range':
+                self.clr_gamma = K.variable(self.clr['clr_gamma'], name='clr_gamma')
+            self.current_lr = K.variable(0., name='current_lr')
+            self.clr_iterations = K.variable(0., name='clr_iterations')    
 
     def get_updates(self, params, constraints, loss):
         grads = self.get_gradients(loss, params)
@@ -572,28 +547,25 @@ class Adam(Optimizer):
             lr *= (1. / (1. + self.decay * self.iterations))
             
         if self.clr != None:
-            if self.clr['mode']=='triangular':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))
+            if self.clr_mode=='triangular':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))
                 
-            elif self.clr['mode']=='triangular2':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
+            elif self.clr_mode=='triangular2':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
                 
-            elif self.clr['mode']=='exp_range':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))*self.clr['gamma']**(self.iterations)
+            elif self.clr_mode=='exp_range':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))*self.clr_gamma**(self.clr_iterations)
                 
-        self.updates.append(K.update(self.current_lr, lr))                
+
+            self.updates.append(K.update_add(self.clr_iterations, 1))
+        
+            self.updates.append(K.update(self.current_lr, lr))                
 
         t = self.iterations + 1
         lr_t = lr * (K.sqrt(1. - K.pow(self.beta_2, t)) /
@@ -621,13 +593,20 @@ class Adam(Optimizer):
         return self.updates
 
     def get_config(self):
-        config = {'lr': float(K.get_value(self.lr)),
-                  'beta_1': float(K.get_value(self.beta_1)),
-                  'beta_2': float(K.get_value(self.beta_2)),
-                  'decay': float(K.get_value(self.decay)),
-                  'epsilon': self.epsilon,
-                  'iterations': K.get_value(self.iterations),
-                  'current_lr': float(K.get_value(self.current_lr))}
+        if self.clr != None:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'beta_1': float(K.get_value(self.beta_1)),
+                      'beta_2': float(K.get_value(self.beta_2)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon,
+                      'clr_iterations': K.get_value(self.clr_iterations),
+                      'current_lr': float(K.get_value(self.current_lr))}
+        else:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'beta_1': float(K.get_value(self.beta_1)),
+                      'beta_2': float(K.get_value(self.beta_2)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon}            
         base_config = super(Adam, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -659,7 +638,14 @@ class Adamax(Optimizer):
         self.decay = K.variable(decay, name='decay')
         self.initial_decay = decay
         self.clr = clr
-        self.current_lr = K.variable(0., name='current_lr')         
+        if self.clr != None:
+            self.max_lr = K.variable(self.clr['max_lr'], name='max_clr')
+            self.step_size = K.variable(self.clr['step_size'], name='step_size')
+            self.clr_mode = self.clr['mode']
+            if self.clr_mode=='exp_range':
+                self.clr_gamma = K.variable(self.clr['clr_gamma'], name='clr_gamma')
+            self.current_lr = K.variable(0., name='current_lr')
+            self.clr_iterations = K.variable(0., name='clr_iterations')    
 
     def get_updates(self, params, constraints, loss):
         grads = self.get_gradients(loss, params)
@@ -670,28 +656,25 @@ class Adamax(Optimizer):
             lr *= (1. / (1. + self.decay * self.iterations))
             
         if self.clr != None:
-            if self.clr['mode']=='triangular':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))
+            if self.clr_mode=='triangular':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))
                 
-            elif self.clr['mode']=='triangular2':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
+            elif self.clr_mode=='triangular2':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
                 
-            elif self.clr['mode']=='exp_range':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))*self.clr['gamma']**(self.iterations)
+            elif self.clr_mode=='exp_range':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))*self.clr_gamma**(self.clr_iterations)
                 
-        self.updates.append(K.update(self.current_lr, lr))                
+
+            self.updates.append(K.update_add(self.clr_iterations, 1))
+        
+            self.updates.append(K.update(self.current_lr, lr))             
 
         t = self.iterations + 1
         lr_t = lr / (1. - K.pow(self.beta_1, t))
@@ -721,13 +704,20 @@ class Adamax(Optimizer):
         return self.updates
 
     def get_config(self):
-        config = {'lr': float(K.get_value(self.lr)),
-                  'beta_1': float(K.get_value(self.beta_1)),
-                  'beta_2': float(K.get_value(self.beta_2)),
-                  'decay': float(K.get_value(self.decay)),
-                  'epsilon': self.epsilon,
-                  'iterations': K.get_value(self.iterations),
-                  'current_lr': float(K.get_value(self.current_lr))}
+        if self.clr != None:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'beta_1': float(K.get_value(self.beta_1)),
+                      'beta_2': float(K.get_value(self.beta_2)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon,
+                      'clr_iterations': K.get_value(self.clr_iterations),
+                      'current_lr': float(K.get_value(self.current_lr))}
+        else:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'beta_1': float(K.get_value(self.beta_1)),
+                      'beta_2': float(K.get_value(self.beta_2)),
+                      'decay': float(K.get_value(self.decay)),
+                      'epsilon': self.epsilon}            
         base_config = super(Adamax, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -763,7 +753,14 @@ class Nadam(Optimizer):
         self.epsilon = epsilon
         self.schedule_decay = schedule_decay
         self.clr = clr
-        self.current_lr = K.variable(0., name='current_lr')         
+        if self.clr != None:
+            self.max_lr = K.variable(self.clr['max_lr'], name='max_clr')
+            self.step_size = K.variable(self.clr['step_size'], name='step_size')
+            self.clr_mode = self.clr['mode']
+            if self.clr_mode=='exp_range':
+                self.clr_gamma = K.variable(self.clr['clr_gamma'], name='clr_gamma')
+            self.current_lr = K.variable(0., name='current_lr')
+            self.clr_iterations = K.variable(0., name='clr_iterations')        
 
     def get_updates(self, params, constraints, loss):
         grads = self.get_gradients(loss, params)
@@ -772,28 +769,25 @@ class Nadam(Optimizer):
         lr = self.lr
         
         if self.clr != None:
-            if self.clr['mode']=='triangular':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))
+            if self.clr_mode=='triangular':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))
                 
-            elif self.clr['mode']=='triangular2':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
+            elif self.clr_mode=='triangular2':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))/(2**(cycle-1))
                 
-            elif self.clr['mode']=='exp_range':
-                step_size = self.clr['step_size']
-                max_lr = self.clr['max_lr']
-                cycle = tensor.floor(1+self.iterations/(2*step_size))
-                x = K.abs(self.iterations/step_size - 2*cycle + 1)
-                lr = lr + (max_lr-lr)*K.maximum(0., (1-x))*self.clr['gamma']**(self.iterations)
-            
-        self.updates.append(K.update(self.current_lr, lr))                            
+            elif self.clr_mode=='exp_range':
+                cycle = tensor.floor(1+self.clr_iterations/(2*self.step_size))
+                x = K.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
+                lr = lr + (self.max_lr-lr)*K.maximum(0., (1-x))*self.clr_gamma**(self.clr_iterations)
+                
+
+            self.updates.append(K.update_add(self.clr_iterations, 1))
+        
+            self.updates.append(K.update(self.current_lr, lr))                      
 
         t = self.iterations + 1
 
@@ -833,13 +827,20 @@ class Nadam(Optimizer):
         return self.updates
 
     def get_config(self):
-        config = {'lr': float(K.get_value(self.lr)),
-                  'beta_1': float(K.get_value(self.beta_1)),
-                  'beta_2': float(K.get_value(self.beta_2)),
-                  'epsilon': self.epsilon,
-                  'schedule_decay': self.schedule_decay,
-                  'iterations': K.get_value(self.iterations),
-                  'current_lr': float(K.get_value(self.current_lr))}
+        if self.clr != None:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'beta_1': float(K.get_value(self.beta_1)),
+                      'beta_2': float(K.get_value(self.beta_2)),
+                      'epsilon': self.epsilon,
+                      'schedule_decay': self.schedule_decay,
+                      'clr_iterations': K.get_value(self.clr_iterations),
+                      'current_lr': float(K.get_value(self.current_lr))}
+        else:
+            config = {'lr': float(K.get_value(self.lr)),
+                      'beta_1': float(K.get_value(self.beta_1)),
+                      'beta_2': float(K.get_value(self.beta_2)),
+                      'epsilon': self.epsilon,
+                      'schedule_decay': self.schedule_decay}            
         base_config = super(Nadam, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
