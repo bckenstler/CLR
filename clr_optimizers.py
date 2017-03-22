@@ -1,3 +1,16 @@
+"""
+This module is a modified version of Keras' default optimizer package 
+(https://github.com/fchollet/keras/blob/master/keras/optimizers.py).
+Each optimizer can now implement triangular cyclical learning rate (clr).
+To use clr, simply pass into any optimizer the following:
+clr = {
+    "step_size":step_size,
+    "max_lr":max_lr
+    }
+Where step_size is half the period of the cycle in iterations,
+and max_lr is the peak of the cycle (default lr is the base lr).
+"""
+
 from __future__ import absolute_import
 import six
 from six.moves import zip
