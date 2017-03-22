@@ -25,6 +25,8 @@ and `max_lr` is the peak of the cycle (default lr is the base lr).
 
 ## `triangular2`
 
+![Alt text](triangular2.png?raw=true "Title")
+
 This method is a triangular cycle that decreases the cycle amplitude by half after each period, while keeping the base lr constant.
 
 To use `triangular2` clr, simply pass into any optimizer the following:
@@ -39,6 +41,8 @@ Where `step_size` is half the period of the cycle in iterations,
 and `max_lr` is the peak of the cycle (default lr is the base lr).
 
 ## `exp_range`
+
+![Alt text](exp_range.png?raw=true "Title")
 
 This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration, while keeping the base lr constant.
 
