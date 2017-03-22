@@ -20,7 +20,8 @@ and max_lr is the peak of the cycle (default lr is the base lr).
 
 "triangular2":
 
-This method is a triangular cycle that decreases the cycle amplitude by half after each period, while keeping the base lr constant.
+This method is a triangular cycle that decreases the cycle amplitude by half after each period,
+while keeping the base lr constant.
 
 To use triangular2 clr, simply pass into any optimizer the following:
 
@@ -35,7 +36,8 @@ and max_lr is the peak of the cycle (default lr is the base lr).
 
 "exp_range":
 
-This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration, while keeping the base lr constant.
+This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration,
+while keeping the base lr constant.
 
 To use exp_range clr, simply pass into any optimizer the following:
 
@@ -50,7 +52,9 @@ Where step_size is half the period of the cycle in iterations,
 max_lr is the peak of the cycle (default lr is the base lr),
 and gamma is the scaling factor.
 
-Note that clr happens prior to any further learning rate adjustments as called for in a given optimizer, with the exception of learning rate decay. If implemented, decay happens prior to clr; this alters the cycle by lowering the minimum lr; the max_lr is kept constant.
+Note that clr happens prior to any further learning rate adjustments as called for in a given optimizer,
+with the exception of learning rate decay. If implemented, decay happens prior to clr;
+this alters the cycle by lowering the minimum lr; the max_lr is kept constant.
 """
 
 from __future__ import absolute_import
