@@ -7,6 +7,9 @@ Each optimizer can now implement cyclical learning rate with one of the followin
 
 ## `triangular`
 
+![Alt text](triangular.png?raw=true "Title")
+
+
 This method is a simple triangular cycle.
 
 To use `triangular` clr, simply pass into any optimizer the following:
