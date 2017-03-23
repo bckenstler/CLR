@@ -7,7 +7,7 @@ Each optimizer can now implement cyclical learning rate with one of the followin
 
 ## `triangular`
 
-![Alt text](triangular.png?raw=true "Title")
+![Alt text](images/triangular.png?raw=true "Title")
 
 
 This method is a simple triangular cycle.
@@ -33,7 +33,7 @@ and `max_lr` is the peak of the cycle (default lr is the base lr).
 
 ## `triangular2`
 
-![Alt text](triangular2.png?raw=true "Title")
+![Alt text](images/triangular2.png?raw=true "Title")
 
 This method is a triangular cycle that decreases the cycle amplitude by half after each period, while keeping the base lr constant.
 
@@ -58,7 +58,7 @@ and `max_lr` is the peak of the cycle (default lr is the base lr).
 
 ## `exp_range`
 
-![Alt text](exp_range.png?raw=true "Title")
+![Alt text](images/exp_range.png?raw=true "Title")
 
 This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration, while keeping the base lr constant.
 
