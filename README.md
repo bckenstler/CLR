@@ -159,7 +159,7 @@ Default custom cycle-policy example:
 
 Results:
 
-![Alt text](images/iterations.png?raw=true "Title")
+![Alt text](images/iteration.png?raw=true "Title")
 
 ## Changing/resetting Cycle
 
@@ -195,8 +195,11 @@ Example:
 ## Order of learning rate augmentation
 Note that the clr callback updates the learning rate prior to any further learning rate adjustments as called for in a given optimizer.
 
-## Choosing a suitable `max_lr`
+## Choosing a suitable max_lr
 TO-DO
 
+For now, see paper.
+
+## Functionality Test
 
 clr_callback_tests.ipynb contains tests demonstrating desired behavior of optimizers.
