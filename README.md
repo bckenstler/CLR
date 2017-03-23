@@ -161,6 +161,8 @@ Results:
 
 ![Alt text](images/iteration.png?raw=true "Title")
 
+This result highlights one of the key differences between scaling on cycle vs scaling on iteration. When you scale on cycle, the absolute change in learning rate from one iteration to the next is always constant in a cycle. Scaling on iteration alters the absolute change at every iteration; in this particular case, the absolute change is monotonically decreasing. This results in the curvature between peaks.
+
 ## Changing/resetting Cycle
 
 During training, you may wish to adjust your cycle parameters: 
