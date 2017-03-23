@@ -6,7 +6,7 @@ This repository includes a Keras callback to be used in training that allows imp
 
 A cyclical learning rate is a policy of learning rate adjustment that increases the learning rate off a base value in a cyclical nature. Typically the frequency of the cycle is constant, but the amplitude is often scaled dynamically at either each cycle or each mini-batch iteration.
 
-`clr_callback.py` contains the callback class `CyclicalLR()`.
+`clr_callback.py` contains the callback class `CyclicLR()`.
 
 This class includes 3 built-in CLR policies, `'triangular'`, `'triangular2'`, and `'exp_range'`, as detailed in the original paper. It also allows for custom amplitude scaling functions, enabling easy experimentation.
 
@@ -184,7 +184,7 @@ simply resets the scaling function.
 
 ## Report
 
-`CyclicalLR()` keeps track of learning rates at specific training iterations. This is what generated the plots above. This list of `(lr, iteration)` tuples is stored in the `record` attribute.
+`CyclicLR()` keeps track of learning rates at specific training iterations. This is what generated the plots above. This list of `(lr, iteration)` tuples is stored in the `record` attribute.
 
 Note: iterations in the record is the running training iterations; it is distinct from the cycle iterations and does not reset. This allows you to plot your learning rates over training iterations, even after you change/reset the cycle.
 
