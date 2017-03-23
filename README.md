@@ -32,9 +32,9 @@ where `x` is either `iterations` or `cycle`, depending on `scale_mode`.
 
 # Policies
 
-## `triangular`
+## triangular
 
-![Alt text](images/triangular.png?raw=true "Title")
+![Alt text](images/triangularDiag.png?raw=true "Title")
 
 
 This method is a simple triangular cycle.
@@ -58,7 +58,7 @@ Results:
 
 ![Alt text](images/triangular.png?raw=true "Title")
 
-## `triangular2`
+## triangular2
 
 ![Alt text](images/triangular2Diag.png?raw=true "Title")
 
@@ -73,16 +73,18 @@ lr = base_lr + (max_lr-lr)*np.maximum(0, (1-x))/float(2**(cycle-1))
 ```
 
 Default triangular clr policy example:
+
 ```python
     clr = CyclicLR(base_lr=0.001, max_lr=0.006,
                         step_size=2000., mode='triangular2')
     model.fit(X_train, Y_train, callbacks=[clr])
 ``` 
+
 Results:
 
 ![Alt text](images/triangular2.png?raw=true "Title")
 
-## `exp_range`
+## exp_range
 
 ![Alt text](images/exp_rangeDiag.png?raw=true "Title")
 
@@ -97,6 +99,7 @@ lr= base_lr + (max_lr-lr)*np.maximum(0, (1-x))*gamma**(iterations)
 ```
 
 Default triangular clr policy example:
+
 ```python
     clr = CyclicLR(base_lr=0.001, max_lr=0.006,
                         step_size=2000., mode='exp_range',
@@ -130,6 +133,7 @@ Default custom cycle-policy example:
 ``` 
 
 Results:
+
 ![Alt text](images/cycle.png?raw=true "Title")
 
 ## Custom Iteration-Policy
@@ -154,6 +158,7 @@ Default custom cycle-policy example:
 ``` 
 
 Results:
+
 ![Alt text](images/iterations.png?raw=true "Title")
 
 ## Changing/resetting Cycle
@@ -170,9 +175,11 @@ Calling `_reset()` allows you to start a new cycle w/ new parameters.
 `_reset()` also sets the cycle iteration count to zero. If you are using a policy with dynamic amplitude scaling, this ensures the scaling function is reset as well.
 
 If an argument is not not included in the function call, then the corresponding parameter is unchanged in the new cycle. As a consequence, calling 
+
 ```python
 clr._reset()
 ```
+
 simply resets the scaling function.
 
 ## Report
@@ -182,6 +189,7 @@ simply resets the scaling function.
 Note: iterations in the record is the running training iterations; it is distinct from the cycle iterations and does not reset. This allows you to plot your learning rates over training iterations, even after you change/reset the cycle.
 
 Example:
+
 ![Alt text](images/reset.png?raw=true "Title")
 
 ## Order of learning rate augmentation
