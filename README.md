@@ -13,7 +13,7 @@ This class includes 3 built-in CLR policies, `'triangular'`, `'triangular2'`, an
 Arguments for this class include:
 * `base_lr`: initial learning rate, which is the lower boundary in the cycle. This overrides optimizer `lr`. Default 0.001.
 * `max_lr`: upper boundary in the cycle. Functionally, it defines the cycle amplitude (`max_lr` - `base_lr`). The lr at any cycle is the sum of `base_lr` and some scaling of the amplitude; therefore `max_lr` may not actually be reached depending on scaling function. Default 0.006.
-* `step_size`: number of training iterations per half cycle. Authors suggest setting `step_size` 2-8 x training iterations in epoch. Default 2000.
+* `step_size`: number of training iterations per half cycle. Authors suggest setting `step_size = (2-8) x (training iterations in epoch)`. Default 2000.
 * `mode`: one of `{'triangular', 'triangular2', 'exp_range'}`. Values correspond to policies detailed below. If `scale_fn` is not `None`, this argument is ignored. Default `'triangular'`.
 * `gamma`: constant in `'exp_range'` scaling function, `gamma^(cycle iterations)`. Default 1.
 * `scale_fn`: Custom scaling policy defined by a single argument lambda function, where `0 <= scale_fn(x) <= 1` for all `x >= 0`. `mode` parameter is ignored when this argument is used. Default `None`.
