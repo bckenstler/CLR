@@ -19,7 +19,7 @@ Arguments for this class include:
 * `scale_fn`: Custom scaling policy defined by a single argument lambda function, where `0 <= scale_fn(x) <= 1` for all `x >= 0`. `mode` parameter is ignored when this argument is used. Default `None`.
 * `scale_mode`: `{'cycle', 'iterations'}`. Defines whether `scale_fn` is evaluated on cycle number or cycle iterations (training iterations since start of cycle). Default is 'cycle'.
 
-**NOTE: `base_lr` overrides optimizer lr**
+**NOTE: `base_lr` overrides `optimizer.lr`**
 
 The general structure of the policy algorithm is:
 
