@@ -1,11 +1,30 @@
 # CLR
+
+![Alt text](images/triangular.png?raw=true "Title")
+
 This repository includes a Keras callback to be used in training that allows implementation of cyclical learning rate policies, as detailed in this paper https://arxiv.org/abs/1506.01186.
+
+A cyclical learning rate is a policy of learning rate adjustment that increases the learning rate off a base value in a cyclical nature. Typically the frequency of the cycle is constant, but the amplitude is often scaled dynamically at either each cycle or each mini-batch iteration.
 
 `clr_callback.py` contains the callback class `CyclicalLR()`.
 
-This class includes 3 CLR policies, `python 'triangular'`, `python 'triangular2'`, and `python 'exp_range'`.
+Arguments for this class include:
+* `base_lr`: initial learning rate, which is the lower boundary in the cycle.
+* `max_lr`: upper boundary in the cycle. Functionally, it defines the cycle amplitude (`max_lr` - `base_lr`). The lr at any cycle is the sum of `base_lr` and some scaling of the amplitude; therefore `max_lr` may not actually be reached depending on scaling function.
+* `step_size`: number of training iterations per half cycle. Authors suggest setting `step_size` 2-8 x training iterations in epoch.
+* `mode`: one of `{'triangular', 'triangular2', 'exp_range'}`. Default `'triangular'`. Values correspond to policies detailed below. If `scale_fn` is not `None`, this argument is ignored.
+* `gamma`: constant in `'exp_range'` scaling function, `gamma^(cycle iterations)`
+* `scale_fn`: Custom scaling policy defined by a single argument lambda function, where `0 <= scale_fn(x) <= 1` for all `x >= 0`. `mode` parameter is ignored when this argument is used.
+* `scale_mode`: `{'cycle', 'iterations'}`. Defines whether `scale_fn` is evaluated on cycle number or cycle iterations (training iterations since start of cycle). Default is 'cycle'.
 
-Each optimizer can now implement cyclical learning rate with one of the following three approaches:
+Default triangular clr policy example:
+```python
+    clr = CyclicLR(base_lr=0.001, max_lr=0.006,
+                        step_size=2000.)
+    model.fit(X_train, Y_train, callbacks=[clr])
+```
+
+This class includes 3 built-in CLR policies, `'triangular'`, `'triangular2'`, and `'exp_range'`, as detailed in the original paper.
 
 ## `triangular`
 
