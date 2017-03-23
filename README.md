@@ -1,7 +1,9 @@
 # CLR
-This repository includes modified Keras optimizers that allow implementation of three cyclical learning rate policies, as detailed in this paper https://arxiv.org/abs/1506.01186.
+This repository includes a Keras callback to be used in training that allows implementation of cyclical learning rate policies, as detailed in this paper https://arxiv.org/abs/1506.01186.
 
-clr_optimizers.py is a modified version of Keras' default optimizer module (https://github.com/fchollet/keras/blob/master/keras/optimizers.py) that includes 3 CLR policies, triangular, triangular2, and exp_range.
+`clr_callback.py` contains the callback class `CyclicalLR()`.
+
+This class includes 3 CLR policies, `python 'triangular'`, `python 'triangular2'`, and `python 'exp_range'`.
 
 Each optimizer can now implement cyclical learning rate with one of the following three approaches:
 
