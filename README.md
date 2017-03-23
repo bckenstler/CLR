@@ -9,8 +9,8 @@ A cyclical learning rate is a policy of learning rate adjustment that increases 
 `clr_callback.py` contains the callback class `CyclicalLR()`.
 
 Arguments for this class include:
-* `base_lr`: initial learning rate, which is the lower boundary in the cycle.
-* `max_lr`: upper boundary in the cycle. Functionally, it defines the cycle amplitude (`max_lr` - `base_lr`). The lr at any cycle is the sum of `base_lr` and some scaling of the amplitude; therefore `max_lr` may not actually be reached depending on scaling function.
+* `base_lr`: initial learning rate, which is the lower boundary in the cycle. Default <tt>0.001</tt>
+* `max_lr`: upper boundary in the cycle. Functionally, it defines the cycle amplitude (`max_lr` - `base_lr`). The lr at any cycle is the sum of `base_lr` and some scaling of the amplitude; therefore `max_lr` may not actually be reached depending on scaling function. Default 0.006
 * `step_size`: number of training iterations per half cycle. Authors suggest setting `step_size` 2-8 x training iterations in epoch.
 * `mode`: one of `{'triangular', 'triangular2', 'exp_range'}`. Default `'triangular'`. Values correspond to policies detailed below. If `scale_fn` is not `None`, this argument is ignored.
 * `gamma`: constant in `'exp_range'` scaling function, `gamma^(cycle iterations)`
