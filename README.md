@@ -7,7 +7,18 @@ Each optimizer can now implement cyclical learning rate with one of the followin
 
 ## `triangular`
 
+![Alt text](triangular.png?raw=true "Title")
+
+
 This method is a simple triangular cycle.
+
+Basic algorithm:
+
+```python
+cycle = np.floor(1+iterations/(2*step_size))
+x = np.abs(iterations/step_size - 2*cycle + 1)
+lr = base_lr + (max_lr-lr)*np.maximum(0, (1-x))
+```
 
 To use `triangular` clr, simply pass into any optimizer the following:
 ```python
@@ -22,7 +33,17 @@ and `max_lr` is the peak of the cycle (default lr is the base lr).
 
 ## `triangular2`
 
+![Alt text](triangular2.png?raw=true "Title")
+
 This method is a triangular cycle that decreases the cycle amplitude by half after each period, while keeping the base lr constant.
+
+Basic algorithm:
+
+```python
+cycle = np.floor(1+iterations/(2*step_size))
+x = np.abs(iterations/step_size - 2*cycle + 1)
+lr = base_lr + (max_lr-lr)*np.maximum(0, (1-x))/float(2**(cycle-1))
+```
 
 To use `triangular2` clr, simply pass into any optimizer the following:
 ```python
@@ -37,7 +58,17 @@ and `max_lr` is the peak of the cycle (default lr is the base lr).
 
 ## `exp_range`
 
+![Alt text](exp_range.png?raw=true "Title")
+
 This method is a triangular cycle that scales the cycle amplitude by a factor `gamma**(iterations)` at each iteration, while keeping the base lr constant.
+
+Basic algorithm:
+
+```python
+cycle = np.floor(1+iterations/(2*step_size))
+x = np.abs(iterations/step_size - 2*cycle + 1)
+lr= base_lr + (max_lr-lr)*np.maximum(0, (1-x))*gamma**(iterations)
+```
 
 To use `exp_range` clr, simply pass into any optimizer the following:
 ```python
