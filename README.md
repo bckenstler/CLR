@@ -176,6 +176,27 @@ Results:
 
 This result highlights one of the key differences between scaling on cycle vs scaling on iteration. When you scale on cycle, the absolute change in learning rate from one iteration to the next is always constant in a cycle. Scaling on iteration alters the absolute change at every iteration; in this particular case, the absolute change is monotonically decreasing. This results in the curvature between peaks.
 
+## Changing/resetting Cycle
+
+During training, you may wish to adjust your cycle parameters: 
+
+```python
+clr._reset(new_base_lr,
+           new_max_lr,
+           new_step_size)
+```
+Calling `_reset()` allows you to start a new cycle w/ new parameters. 
+
+`_reset()` also sets the cycle iteration count to zero. If you are using a policy with dynamic amplitude scaling, this ensures the scaling function is reset.
+
+If an argument is not not included in the function call, then the corresponding parameter is unchanged in the new cycle. As a consequence, calling 
+
+```python
+clr._reset()
+```
+
+simply resets the original cycle.
+
 ## History
 
 `CyclicLR()` keeps track of learning rates, loss, metrics and more in the `history` attribute dict. This generated many of the plots above.
@@ -203,28 +224,6 @@ h = clr.history
 lr = h['lr']
 acc = h['acc']
 ```
-
-## Changing/resetting Cycle
-
-During training, you may wish to adjust your cycle parameters: 
-
-```python
-clr._reset(new_base_lr,
-           new_max_lr,
-           new_step_size)
-```
-Calling `_reset()` allows you to start a new cycle w/ new parameters. 
-
-`_reset()` also sets the cycle iteration count to zero. If you are using a policy with dynamic amplitude scaling, this ensures the scaling function is reset.
-
-If an argument is not not included in the function call, then the corresponding parameter is unchanged in the new cycle. As a consequence, calling 
-
-```python
-clr._reset()
-```
-
-simply resets the original cycle.
-
 
 ## Order of learning rate augmentation
 Note that the clr callback updates the learning rate prior to any further learning rate adjustments as called for in a given optimizer.
