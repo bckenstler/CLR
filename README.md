@@ -178,7 +178,7 @@ This result highlights one of the key differences between scaling on cycle vs sc
 
 ## History
 
-`CyclicLR()` keeps track of learning rates, loss, metrics and more in the `history` attribute dict. This is what generated the plots above.
+`CyclicLR()` keeps track of learning rates, loss, metrics and more in the `history` attribute dict. This generated many of the plots above.
 
 Note: iterations in the history is the running training iterations; it is distinct from the cycle iterations and does not reset. This allows you to plot your learning rates over training iterations, even after you change/reset the cycle.
 
@@ -192,7 +192,7 @@ The authors offer a simple approach to determining the boundaries of your cycle 
 
 An LR range test can be done using the `triangular` policy; simply set `base_lr` and `max_lr` to define the entire range you wish to test over, and set `step_size` to be the total number of iterations in the number of epochs you wish to test on. This linearly increases the learning rate at each iteration over the range desired.
 
-The authors suggest choosing `base_lr` and `max_lr` by plotting accuracy vs. learning rate. Choose `base_lr` to be the learning rate where accuracy starts to increase, and choose `max_lr` to be the learning rate where accuracy starts to slow, oscillate, or fall (the elbow). In the example above, they 0.001 and 0.006 as `base_lr` and `max_lr` respectively.
+The authors suggest choosing `base_lr` and `max_lr` by plotting accuracy vs. learning rate. Choose `base_lr` to be the learning rate where accuracy starts to increase, and choose `max_lr` to be the learning rate where accuracy starts to slow, oscillate, or fall (the elbow). In the example above, they chose 0.001 and 0.006 as `base_lr` and `max_lr` respectively.
 
 ### Plotting Accuracy vs. Learning Rate
 In order to plot accuracy vs learning rate, you can use the `.history` attribute to get the learning rates and accuracy at each iteration.
