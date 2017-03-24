@@ -186,8 +186,7 @@ Example:
 
 ![Alt text](images/reset.png?raw=true "Title")
 ## Choosing a suitable base_lr/max_lr (LR Range Test)
-
-![Alt text](images/lrtest.png?raw=true "Title")
+<img src="images/lrtest.png" width="500" height="300" />
 
 The authors offer a simple approach to determining the boundaries of your cycle by increasing the learning rate over a number of epochs and observing the results. They refer to this as an "LR range test."
 
