@@ -9,7 +9,7 @@ A cyclical learning rate is a policy of learning rate adjustment that increases 
 <img src="images/cifar.png" width="500" height="300" />
 
 The authors demonstrate how CLR policies can provide quicker converge for some neural network tasks and architectures.
-One example from the paper compares validation accuracy for classification on the CIFAR-10 dataset. In this specific example, the author's used a `triangular2` (detailed below) clr policy. With clr, their model reached 81.4% validation accuracy in only 25,000 iterations compared to 70,000 iterations with standard hyperparameter settings.
+One example from the paper compares validation accuracy for classification on the CIFAR-10 dataset. In this specific example, the author's used a `triangular2` clr policy (detailed below). With clr, their model reached 81.4% validation accuracy in only 25,000 iterations compared to 70,000 iterations with standard hyperparameter settings.
 
 One reason this approach may work well is because increasing the learning rate is an effective way of escaping saddle points. By cycling the learning rate, we're guaranteeing that such an increase will take place if we end up in a saddle point. 
 
