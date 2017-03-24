@@ -28,7 +28,7 @@ Arguments for this class include:
 * `mode`: one of `{'triangular', 'triangular2', 'exp_range'}`. Values correspond to policies detailed below. If `scale_fn` is not `None`, this argument is ignored. Default `'triangular'`.
 * `gamma`: constant in `'exp_range'` scaling function, `gamma^(cycle iterations)`. Default 1.
 * `scale_fn`: Custom scaling policy defined by a single argument lambda function, where `0 <= scale_fn(x) <= 1` for all `x >= 0`. `mode` parameter is ignored when this argument is used. Default `None`.
-* `scale_mode`: `{'cycle', 'iterations'}`. Defines whether `scale_fn` is evaluated on cycle number or cycle iterations (training iterations since start of cycle). Default is 'cycle'.
+* `scale_mode`: `{'cycle', 'iterations'}`. Defines whether `scale_fn` is evaluated on cycle number or cycle iterations (training iterations since start of cycle). Default is `'cycle'`.
 
 **NOTE: `base_lr` overrides `optimizer.lr`**
 
