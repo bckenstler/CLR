@@ -44,6 +44,10 @@ where `x` is either `iterations` or `cycle`, depending on `scale_mode`.
 
 `CyclicLR()` can be used with any optimizer in Keras.
 
+### Syncing cycle and training iterations
+
+The author points out that the best accuracies are typically attained with the base learning rate. Therefore it's recommended to make sure your training finishes at the end of the cycle.
+
 # Policies
 
 ## triangular
@@ -177,9 +181,7 @@ Results:
 
 This result highlights one of the key differences between scaling on cycle vs scaling on iteration. When you scale on cycle, the absolute change in learning rate from one iteration to the next is always constant in a cycle. Scaling on iteration alters the absolute change at every iteration; in this particular case, the absolute change is monotonically decreasing. This results in the curvature between peaks.
 
-### Syncing cycle and training iterations
-
-The author points out that the best accuracies are typically attained with the base learning rate. Therefore it's recommended to make sure your training finishes at the end of the cycle.
+# Additional Information
 
 ## Changing/resetting Cycle
 
