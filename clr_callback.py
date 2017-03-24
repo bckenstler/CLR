@@ -56,7 +56,7 @@ class CyclicLR(Callback):
         scale_mode: {'cycle', 'iterations'}.
             Defines whether scale_fn is evaluated on 
             cycle number or cycle iterations (training
-            iterations since start of cycle). Defalt is 'cycle'.
+            iterations since start of cycle). Default is 'cycle'.
     """
 
     def __init__(self, base_lr=0.001, max_lr=0.006, step_size=2000., mode='triangular',
@@ -83,7 +83,8 @@ class CyclicLR(Callback):
             self.scale_mode = scale_mode
         self.clr_iterations = 0.
         self.trn_iterations = 0.
-        self.record = []
+        self.history = {}
+
         self._reset()
 
     def _reset(self, new_base_lr=None, new_max_lr=None,
@@ -108,18 +109,26 @@ class CyclicLR(Callback):
             return self.base_lr + (self.max_lr-self.base_lr)*np.maximum(0, (1-x))*self.scale_fn(self.clr_iterations)
         
     def on_train_begin(self, logs={}):
-        
+        logs = logs or {}
+
         if self.clr_iterations == 0:
             K.set_value(self.model.optimizer.lr, self.base_lr)
         else:
-            K.set_value(self.model.optimizer.lr, self.clr())
-        self.record.append((K.get_value(self.model.optimizer.lr), self.trn_iterations))
+            K.set_value(self.model.optimizer.lr, self.clr())        
             
     def on_batch_end(self, epoch, logs=None):
         
+        logs = logs or {}
         self.trn_iterations += 1
         self.clr_iterations += 1
         K.set_value(self.model.optimizer.lr, self.clr())
-        self.record.append((K.get_value(self.model.optimizer.lr), self.trn_iterations))
+
+        self.history.setdefault('lr', []).append(K.get_value(self.model.optimizer.lr))
+        self.history.setdefault('iterations', []).append(self.trn_iterations)
+
+        for k, v in logs.items():
+            self.history.setdefault(k, []).append(v)
+            
+            
 
   
