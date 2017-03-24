@@ -1,6 +1,6 @@
 # CLR
 
-![Alt text](images/triangularDiag.png =500x300)
+![](images/triangularDiag.png =500x300)
 
 This repository includes a Keras callback to be used in training that allows implementation of cyclical learning rate policies, as detailed in this paper https://arxiv.org/abs/1506.01186.
 
