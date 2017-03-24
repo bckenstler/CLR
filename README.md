@@ -46,7 +46,7 @@ where `x` is either `iterations` or `cycle`, depending on `scale_mode`.
 
 ### Syncing cycle and training iterations
 
-The author points out that the best accuracies are typically attained with the base learning rate. Therefore it's recommended to make sure your training finishes at the end of the cycle.
+The author points out that the best accuracies are typically attained by ending with the base learning rate. Therefore it's recommended to make sure your training finishes at the end of the cycle.
 
 # Policies
 
