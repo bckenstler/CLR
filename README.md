@@ -6,8 +6,7 @@ This repository includes a Keras callback to be used in training that allows imp
 A cyclical learning rate is a policy of learning rate adjustment that increases the learning rate off a base value in a cyclical nature. Typically the frequency of the cycle is constant, but the amplitude is often scaled dynamically at either each cycle or each mini-batch iteration.
 
 ## Why CLR
-![Alt text](images/cifar.png?raw=true "Title")
-<img src="mages/cifar.png" width="400" height="300" />
+<img src="images/cifar.png" width="400" height="300" />
 
 The authors demonstrate how CLR policies can provide quicker converge for some neural network tasks and architectures.
 One example from the paper compares validation accuracy for classification on the CIFAR-10 dataset. In this specific example, the author's used a `triangular2` (detailed below) clr policy. With clr, their model reached 81.4% validation accuracy in only 25,000 iterations compared to 70,000 iterations with standard hyperparameter settings.
