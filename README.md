@@ -6,7 +6,17 @@ This repository includes a Keras callback to be used in training that allows imp
 
 A cyclical learning rate is a policy of learning rate adjustment that increases the learning rate off a base value in a cyclical nature. Typically the frequency of the cycle is constant, but the amplitude is often scaled dynamically at either each cycle or each mini-batch iteration.
 
-CLR policies have been shown to provide quicker converge for some neural network tasks and architectures. The purpose of this module is to not only provide an easy implementation of CLR for Keras, but to enable easy experimentation with policies not explored in the original paper.
+## Why CLR
+![Alt text](images/cifar.png?raw=true "Title")
+
+The authors demonstrate how CLR policies can provide quicker converge for some neural network tasks and architectures.
+One example from the paper compares validation accuracy for classification on the CIFAR-10 dataset. In this specific example, the author's used a `triangular2` (detailed below) clr policy. With clr, their model reached 81.4% validation accuracy in only 25,000 iterations compared to 70,000 iterations with standard hyperparameter settings.
+
+One reason this approach may work well is because increasing the learning rate is an effective way of escaping saddle points. By cycling the learning rate, we're guaranteeing that such an increase will take place if we end up in a saddle point. 
+
+## CyclicLR()
+
+The purpose of this class is to not only provide an easy implementation of CLR for Keras, but to enable easy experimentation with policies not explored in the original paper.
 
 `clr_callback.py` contains the callback class `CyclicLR()`.
 
@@ -31,6 +41,8 @@ x = np.abs(iterations/step_size - 2*cycle + 1)
 lr= base_lr + (max_lr-lr)*np.maximum(0, (1-x))*scale_fn(x)
 ```
 where `x` is either `iterations` or `cycle`, depending on `scale_mode`.
+
+`CyclicLR()` can be used with any optimizer in Keras.
 
 # Policies
 
@@ -165,6 +177,35 @@ Results:
 
 This result highlights one of the key differences between scaling on cycle vs scaling on iteration. When you scale on cycle, the absolute change in learning rate from one iteration to the next is always constant in a cycle. Scaling on iteration alters the absolute change at every iteration; in this particular case, the absolute change is monotonically decreasing. This results in the curvature between peaks.
 
+## History
+
+`CyclicLR()` keeps track of learning rates, loss, metrics and more in the `history` attribute dict. This is what generated the plots above.
+
+Note: iterations in the history is the running training iterations; it is distinct from the cycle iterations and does not reset. This allows you to plot your learning rates over training iterations, even after you change/reset the cycle.
+
+Example:
+
+![Alt text](images/reset.png?raw=true "Title")
+## Choosing a suitable base_lr/max_lr (LR Range Test)
+
+![Alt text](images/lrtest.png?raw=true "Title")
+
+The authors offer a simple approach to determining the boundaries of your cycle by increasing the learning rate over a number of epochs and observing the results. They refer to this as an "LR range test."
+
+An LR range test can be done using the `triangular` policy; simply set `base_lr` and `max_lr` to define the entire range you wish to test over, and set `step_size` to be the total number of iterations in the number of epochs you wish to test on. This linearly increases the learning rate at each iteration over the range desired.
+
+The authors suggest choosing `base_lr` and `max_lr` by plotting accuracy vs. learning rate. Choose `base_lr` to be the learning rate where accuracy starts to increase, and choose `max_lr` to be the learning rate where accuracy starts to slow, oscillate, or fall (the elbow). In the example above, they 0.001 and 0.006 as `base_lr` and `max_lr` respectively.
+
+### Plotting Accuracy vs. Learning Rate
+In order to plot accuracy vs learning rate, you can use the `.history` attribute to get the learning rates and accuracy at each iteration.
+
+```python
+model.fit(X, Y, callbacks=[clr])
+h = clr.history
+lr = h['lr']
+acc = h['acc']
+```
+
 ## Changing/resetting Cycle
 
 During training, you may wish to adjust your cycle parameters: 
@@ -186,23 +227,9 @@ clr._reset()
 
 simply resets the original cycle.
 
-## Report
-
-`CyclicLR()` keeps track of learning rates at specific training iterations. This is what generated the plots above. This list of `(lr, iteration)` tuples is stored in the `record` attribute.
-
-Note: iterations in the record is the running training iterations; it is distinct from the cycle iterations and does not reset. This allows you to plot your learning rates over training iterations, even after you change/reset the cycle.
-
-Example:
-
-![Alt text](images/reset.png?raw=true "Title")
 
 ## Order of learning rate augmentation
 Note that the clr callback updates the learning rate prior to any further learning rate adjustments as called for in a given optimizer.
-
-## Choosing a suitable max_lr
-TO-DO
-
-For now, see paper.
 
 ## Functionality Test
 
