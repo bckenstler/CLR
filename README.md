@@ -1,4 +1,4 @@
-# CLR
+# Cyclical Learning Rate (CLR)
 ![Alt text](images/triangularDiag.png?raw=true "Title")
 
 This repository includes a Keras callback to be used in training that allows implementation of cyclical learning rate policies, as detailed in this paper https://arxiv.org/abs/1506.01186.
