@@ -38,7 +38,7 @@ The general structure of the policy algorithm is:
 ```python
 cycle = np.floor(1+iterations/(2*step_size))
 x = np.abs(iterations/step_size - 2*cycle + 1)
-lr= base_lr + (max_lr-lr)*np.maximum(0, (1-x))*scale_fn(x)
+lr= base_lr + (max_lr-base_lr)*np.maximum(0, (1-x))*scale_fn(x)
 ```
 where `x` is either `iterations` or `cycle`, depending on `scale_mode`.
 
@@ -62,7 +62,7 @@ Basic algorithm:
 ```python
 cycle = np.floor(1+iterations/(2*step_size))
 x = np.abs(iterations/step_size - 2*cycle + 1)
-lr = base_lr + (max_lr-lr)*np.maximum(0, (1-x))
+lr = base_lr + (max_lr-base_lr)*np.maximum(0, (1-x))
 ```
 
 Default triangular clr policy example:
@@ -87,7 +87,7 @@ Basic algorithm:
 ```python
 cycle = np.floor(1+iterations/(2*step_size))
 x = np.abs(iterations/step_size - 2*cycle + 1)
-lr = base_lr + (max_lr-lr)*np.maximum(0, (1-x))/float(2**(cycle-1))
+lr = base_lr + (max_lr-base_lr)*np.maximum(0, (1-x))/float(2**(cycle-1))
 ```
 
 Default triangular clr policy example:
@@ -113,7 +113,7 @@ Basic algorithm:
 ```python
 cycle = np.floor(1+iterations/(2*step_size))
 x = np.abs(iterations/step_size - 2*cycle + 1)
-lr= base_lr + (max_lr-lr)*np.maximum(0, (1-x))*gamma**(iterations)
+lr= base_lr + (max_lr-base_lr)*np.maximum(0, (1-x))*gamma**(iterations)
 ```
 
 Default triangular clr policy example:
@@ -138,7 +138,7 @@ Basic algorithm:
 ```python
 cycle = np.floor(1+iterations/(2*step_size))
 x = np.abs(iterations/step_size - 2*cycle + 1)
-lr= base_lr + (max_lr-lr)*np.maximum(0, (1-x))*0.5*(1+np.sin(cycle*np.pi/2.))
+lr= base_lr + (max_lr-base_lr)*np.maximum(0, (1-x))*0.5*(1+np.sin(cycle*np.pi/2.))
 ```
 
 Default custom cycle-policy example:
@@ -163,7 +163,7 @@ Basic algorithm:
 ```python
 cycle = np.floor(1+iterations/(2*step_size))
 x = np.abs(iterations/step_size - 2*cycle + 1)
-lr= base_lr + (max_lr-lr)*np.maximum(0, (1-x))*1/(5**(iterations*0.0001))
+lr= base_lr + (max_lr-base_lr)*np.maximum(0, (1-x))*1/(5**(iterations*0.0001))
 ```
 
 Default custom cycle-policy example:
