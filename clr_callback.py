@@ -4,7 +4,7 @@ class CyclicLR(Callback):
     """This callback implements a cyclical learning rate policy (CLR).
     The method cycles the learning rate between two boundaries with
     some constant frequency, as detailed in this paper (https://arxiv.org/abs/1506.01186).
-    The amplitute of the cycle can be scaled on a per-iteration or 
+    The amplitude of the cycle can be scaled on a per-iteration or 
     per-cycle basis.
     This class has three built-in policies, as put forth in the paper.
     "triangular":
