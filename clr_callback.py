@@ -1,4 +1,6 @@
 from keras.callbacks import *
+import numpy as np
+from keras import backend as K
 
 class CyclicLR(Callback):
     """This callback implements a cyclical learning rate policy (CLR).
@@ -40,6 +42,8 @@ class CyclicLR(Callback):
             and some scaling of the amplitude; therefore 
             max_lr may not actually be reached depending on
             scaling function.
+        base_momentum: (similar to lr, but opposite direction)
+        max_momentum:
         step_size: number of training iterations per
             half cycle. Authors suggest setting step_size
             2-8 x training iterations in epoch.
@@ -59,12 +63,17 @@ class CyclicLR(Callback):
             iterations since start of cycle). Default is 'cycle'.
     """
 
-    def __init__(self, base_lr=0.001, max_lr=0.006, step_size=2000., mode='triangular',
+    def __init__(self, base_lr=0.001, max_lr=0.006,
+                 base_momentum = 0.95, max_momentum = 0.85, use_momentum = False,
+                 step_size=2000., mode='triangular',
                  gamma=1., scale_fn=None, scale_mode='cycle'):
         super(CyclicLR, self).__init__()
 
         self.base_lr = base_lr
         self.max_lr = max_lr
+        self.base_momentum = base_momentum
+        self.max_momentum = max_momentum
+        self.use_momentum = use_momentum
         self.step_size = step_size
         self.mode = mode
         self.gamma = gamma
@@ -99,25 +108,28 @@ class CyclicLR(Callback):
         if new_step_size != None:
             self.step_size = new_step_size
         self.clr_iterations = 0.
-        
-    def clr(self):
+
+    def circular_change(self, base_value, max_value):
         cycle = np.floor(1+self.clr_iterations/(2*self.step_size))
         x = np.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
         if self.scale_mode == 'cycle':
-            return self.base_lr + (self.max_lr-self.base_lr)*np.maximum(0, (1-x))*self.scale_fn(cycle)
+            return base_value + (max_value-base_value)*np.maximum(0, (1-x))*self.scale_fn(cycle)
         else:
-            return self.base_lr + (self.max_lr-self.base_lr)*np.maximum(0, (1-x))*self.scale_fn(self.clr_iterations)
-        
+            return max_value + (max_value-base_value)*np.maximum(0, (1-x))*self.scale_fn(self.clr_iterations)
+
     def on_train_begin(self, logs={}):
         logs = logs or {}
 
         if self.clr_iterations == 0:
             K.set_value(self.model.optimizer.lr, self.base_lr)
+            if self.use_momentum:
+                K.set_value(self.model.optimizer.momentum, self.base_momentum)
         else:
-            K.set_value(self.model.optimizer.lr, self.clr())        
-            
+            K.set_value(self.model.optimizer.lr, self.circular_change(self.base_lr, self.max_lr))
+            if self.use_momentum:
+                K.set_value(self.model.optimizer.momentum, self.circular_change(self.base_momentum, self.max_momentum))
     def on_batch_end(self, epoch, logs=None):
-        
+
         logs = logs or {}
         self.trn_iterations += 1
         self.clr_iterations += 1
@@ -127,5 +139,7 @@ class CyclicLR(Callback):
 
         for k, v in logs.items():
             self.history.setdefault(k, []).append(v)
-        
-        K.set_value(self.model.optimizer.lr, self.clr())
+
+        K.set_value(self.model.optimizer.lr, self.circular_change(self.base_lr, self.max_lr))
+        if self.use_momentum:
+            K.set_value(self.model.optimizer.momentum, self.circular_change(self.base_momentum, self.max_momentum))
