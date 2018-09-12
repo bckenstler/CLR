@@ -1,4 +1,5 @@
-from keras.callbacks import *
+from keras import backend as K
+from keras.callbacks import Callback
 
 class CyclicLR(Callback):
     """This callback implements a cyclical learning rate policy (CLR).
