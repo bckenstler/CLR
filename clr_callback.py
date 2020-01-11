@@ -60,7 +60,7 @@ class CyclicLR(Callback):
     """
 
     def __init__(self, base_lr=0.001, max_lr=0.006, step_size=2000., mode='triangular',
-                 gamma=1., scale_fn=None, scale_mode='cycle'):
+                 gamma=1., scale_fn=None, scale_mode='cycle', file_name = "clr_pickle", save_every = 4):
         super(CyclicLR, self).__init__()
 
         self.base_lr = base_lr
@@ -68,6 +68,8 @@ class CyclicLR(Callback):
         self.step_size = step_size
         self.mode = mode
         self.gamma = gamma
+        self.file_name = file_name
+        self.save_every = save_every
         if scale_fn == None:
             if self.mode == 'triangular':
                 self.scale_fn = lambda x: 1.
@@ -129,3 +131,21 @@ class CyclicLR(Callback):
             self.history.setdefault(k, []).append(v)
         
         K.set_value(self.model.optimizer.lr, self.clr())
+    
+    def on_epoch_end(self, epoch, logs = None):
+        
+        # if epoch is a multiple of step size, pickle the clr_file to disk 
+        if (epoch + 1) % self.save_every == 0:
+            # build the file path
+            file_path = self.file_name + "_" + "{}".format(str(epoch + 1).zfill(3))
+
+            # open the pickle file
+            f = open(file_path, "wb")
+
+            # pickle the object to disk
+            pickle.dump(self, f)
+
+            # close the pickle file
+            f.close()
+
+            print("[INFO] saved clr pickle to {}".format(file_path))
